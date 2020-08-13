@@ -26,6 +26,39 @@ units = extract_units(unitlist, boxes)
 peers = extract_peers(units, boxes)
 
 
+def find_twin(search_list):
+    """
+    find if there is similar boxes with length 2 in the list
+    """
+    seen = {}
+    uniq = []
+    
+    for x in search_list:
+        if len(x)==2:
+            if x not in seen:
+                seen[x]=1
+            else:
+                if seen[x]==1:
+                    uniq.append(x)
+                seen[x]+=1
+    return uniq
+
+
+def twin_correction(twin,col,values):
+    """
+    Find similarities in boxes and remove twins if there is any similar characters
+    """
+    
+    for box in col:
+        if len(values[box]) > 1 and values[box] != twin:
+            temp=values[box]
+            for c in twin:
+                if c in temp:
+                    temp.replace(c,'')
+            values[box]=temp
+    return values
+
+
 def naked_twins(values):
     """Eliminate values using the naked twins strategy.
 
@@ -54,7 +87,17 @@ def naked_twins(values):
     strategy repeatedly).
     """
     # TODO: Implement this function!
-    raise NotImplementedError
+#    raise NotImplementedError
+    
+    #First Column Search
+    for col in column_units:
+        select=[box for box in col if len(values[box])==2]
+        if bool(select):
+            twin=find_twin(select)
+            if bool(twin):
+                for val in twin:
+                    values=twin_correction(t,col,values)
+    return values
 
 
 def eliminate(values):
@@ -93,7 +136,7 @@ def eliminate(values):
                 values[p]=temp           
         
     return values        
-    pass
+    
 
 
 def only_choice(values):
@@ -206,11 +249,18 @@ def search(values):
     values = reduce_puzzle(values)
     if values is False:
         return False ## Failed earlier
+    
+    
     if all(len(values[s]) == 1 for s in boxes): 
         return values ## Solved!
     
+    #Naked Twin 
+    values=naked_twins(values)
+    
     # Choose one of the unfilled squares with the fewest possibilities
     select={box:len(values[box]) for box in values.keys() if len(values[box]) > 1 }
+    
+    
     
 #    if not bool(select):
 #        return values
@@ -249,6 +299,7 @@ def solve(grid):
 
 
 if __name__ == "__main__":
+    grid='2.............62....1....7...6..8...3...9...7...6..4...4....8....52.............3'
     diag_sudoku_grid = '2.............62....1....7...6..8...3...9...7...6..4...4....8....52.............3'
     display(grid2values(diag_sudoku_grid))
     result = solve(diag_sudoku_grid)
